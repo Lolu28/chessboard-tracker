@@ -156,6 +156,11 @@ void FastCheckerboardDetector::handleImageMessage(const sensor_msgs::ImageConstP
     msg.header.frame_id = message->header.frame_id;
     msg.header.stamp = message->header.stamp;
 
+
+    //rotate it 180 degrees over y axis to have z of the marker pointing outwards    
+    Eigen::Affine3d rotation_around_y( Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY()) );
+    final_transform = final_transform * rotation_around_y;
+
     tf::poseEigenToMsg(final_transform, msg.pose);
 
     camera_pose_publisher_.publish(msg);
