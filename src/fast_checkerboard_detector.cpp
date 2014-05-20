@@ -11,7 +11,8 @@ FastCheckerboardDetector::FastCheckerboardDetector(ros::NodeHandle& nh, ros::Nod
     it_(nh),
     cv_translation(3, 1, cv::DataType<double>::type, translation),
     cv_rotation(3, 1, cv::DataType<double>::type, rotation),
-    cv_distortion(cv::Mat::zeros(1, 5, cv::DataType<float>::type))
+    cv_distortion(cv::Mat::zeros(1, 5, cv::DataType<float>::type)),
+    lastProcessedImageStamp(0)
   {
     if(!nh_private.getParam("grid_size_x", grid_size_x))
     {
@@ -33,6 +34,9 @@ FastCheckerboardDetector::FastCheckerboardDetector(ros::NodeHandle& nh, ros::Nod
     {
       ROS_ERROR("Missing parameter 'write_trajectory'!");
     }
+    maxRate = 1E6;
+    nh_private.getParam("max_image_processing_rate", maxRate);
+    ROS_INFO("Processing images with up to %.2f Hz", maxRate);
 
     corners_.reserve(grid_size_x * grid_size_y);
 
@@ -103,6 +107,11 @@ void FastCheckerboardDetector::handleCameraInfo(const sensor_msgs::CameraInfoCon
 
 void FastCheckerboardDetector::handleImageMessage(const sensor_msgs::ImageConstPtr& message)
 {
+  if ((message->header.stamp - lastProcessedImageStamp).toSec() < 1.0/maxRate) {
+    return;
+  }
+  lastProcessedImageStamp = message->header.stamp;
+
   cv_bridge::CvImageConstPtr image_bridge = cv_bridge::toCvShare(message, "mono8");
   const cv::Mat image = image_bridge->image;
 
@@ -187,7 +196,7 @@ void FastCheckerboardDetector::handleImageMessage(const sensor_msgs::ImageConstP
   {
     resetROI();
 
-    ROS_WARN_STREAM("Checkerboard tracking lost!");
+    ROS_WARN_THROTTLE(2.0, "Checkerboard tracking lost! (shows every 2 seconds)");
   }
 }
 

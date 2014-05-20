@@ -62,6 +62,9 @@ private:
   std::ostream *trajectory_out_;
   std::string TrajectoryFile;
 
+  ros::Time lastProcessedImageStamp;
+  double maxRate;
+
 public:  
 
   FastCheckerboardDetector(ros::NodeHandle& nh, ros::NodeHandle& nh_private);
