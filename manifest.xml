@@ -16,7 +16,8 @@
   <depend package="cv_bridge"/>
   <depend package="opencv2"/>
   <depend package="eigen_conversions" />
-  <depend package="common_rosdeps" />
+  <depend package="tf" />	
+<!--  <depend package="common_rosdeps" /> -->
   <rosdep name="eigen" />
 
   <export>
