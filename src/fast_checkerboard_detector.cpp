@@ -172,6 +172,13 @@ void FastCheckerboardDetector::handleImageMessage(const sensor_msgs::ImageConstP
 
     tf::poseEigenToMsg(final_transform, msg.pose);
 
+    tf::StampedTransform tfTransform;
+    tfTransform.stamp_ = msg.header.stamp;
+    tfTransform.frame_id_ = msg.header.frame_id;
+    tfTransform.child_frame_id_ = "marker";
+    tf::poseMsgToTF(msg.pose, tfTransform);
+    broadcaster_.sendTransform(tfTransform);
+
     camera_pose_publisher_.publish(msg);
 
     if(writePoseToFile)
