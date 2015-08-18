@@ -102,6 +102,18 @@ include_directories(
 
 ## Declare a cpp executable
 # add_executable(test_node src/test_node.cpp)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LINUX -D_REENTRANT -Wall -O3 -funsafe-loop-optimizations -fsee -funroll-loops -fno-math-errno -funsafe-math-optimizations -ffinite-math-only -fno-signed-zeros")
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64 OR x86_32)
+  message("enabling msse2 for x86_64 or x86_32 architecture")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -msse2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -msse2")
+endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64 OR x86_32)
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES arm)
+  message("enabling -mfpu=neon -mfloat-abi=softfp for ARM architecture")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mcpu=cortex-a9 -mfpu=neon -mtune=cortex-a9 -mvectorize-with-neon-quad -ffast-math")
+endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES arm)
+
 
 add_library(fast_checkerboard_detector_nodelet src/fast_checkerboard_detector_nodelet.cpp src/fast_checkerboard_detector.cpp)
 add_executable(fast_checkerboard_detector nodes/fast_checkerboard_detector_node.cpp src/fast_checkerboard_detector.cpp)

@@ -34,6 +34,10 @@ FastCheckerboardDetector::FastCheckerboardDetector(ros::NodeHandle& nh, ros::Nod
     {
       ROS_ERROR("Missing parameter 'write_trajectory'!");
     }
+    if(!nh_private.getParam("rectified_image", rectifiedImage))
+    {
+      ROS_ERROR("Missing parameter 'rectified_image'!");
+    }
     maxRate = 1E6;
     nh_private.getParam("max_image_processing_rate", maxRate);
     ROS_INFO("Processing images with up to %.2f Hz", maxRate);
@@ -82,7 +86,13 @@ void FastCheckerboardDetector::handleCameraInfo(const sensor_msgs::CameraInfoCon
 
   intrinsic_matrix_ = cv::Mat(3, 3, cv::DataType<float>::type);
 
-  const double* info_ptr = info->K.begin();
+  const double* info_ptr = NULL;
+  if (!rectifiedImage)
+    info_ptr = info->K.begin();
+  else
+    info_ptr = info->P.begin();
+
+
 
   for(int row_idx = 0; row_idx < intrinsic_matrix_.rows; ++row_idx)
   {
@@ -92,8 +102,10 @@ void FastCheckerboardDetector::handleCameraInfo(const sensor_msgs::CameraInfoCon
       {
         *row_ptr = (float) *info_ptr;
       }
+
       // skip 4th column
-      //info_ptr++;
+      if (rectifiedImage)
+        info_ptr++;
   }
 
   std::cout << intrinsic_matrix_ << std::endl;
@@ -101,23 +113,32 @@ void FastCheckerboardDetector::handleCameraInfo(const sensor_msgs::CameraInfoCon
 
   distortion_vector = info->D;
 
+  if (rectifiedImage)
+    distortion_vector.clear();
+
+  for (int i=0; i<distortion_vector.size(); i++)
+  {
+    std::cout << "distortion param: " << i << " = " << distortion_vector[i] << std::endl;
+  }
+
+
   img_subscriber_ = it_.subscribe("camera_image", 1, &FastCheckerboardDetector::handleImageMessage, this);
 }
 
 
 void FastCheckerboardDetector::handleImageMessage(const sensor_msgs::ImageConstPtr& message)
 {
-  if ((message->header.stamp - lastProcessedImageStamp).toSec() < 1.0/maxRate) {
-    return;
-  }
-  lastProcessedImageStamp = message->header.stamp;
+//  if ((message->header.stamp - lastProcessedImageStamp).toSec() < 1.0/maxRate) {
+//    return;
+//  }
+//  lastProcessedImageStamp = message->header.stamp;
 
   cv_bridge::CvImageConstPtr image_bridge = cv_bridge::toCvShare(message, "mono8");
   const cv::Mat image = image_bridge->image;
 
   limitROI(image);
 
-  //ROS_INFO_STREAM("ROI x: " << roi_.x << " y: " << roi_.y << " width: " << roi_.width << " height: " << roi_.height);
+  ROS_INFO_STREAM("ROI x: " << roi_.x << " y: " << roi_.y << " width: " << roi_.width << " height: " << roi_.height);
 
   bool found_chessboard = cv::findChessboardCorners(cv::Mat(image, roi_), cv::Size(grid_size_x, grid_size_y), corners_, 0);
 

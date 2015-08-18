@@ -67,6 +67,7 @@ private:
 
   ros::Time lastProcessedImageStamp;
   double maxRate;
+  bool rectifiedImage;
 
 public:  
 
